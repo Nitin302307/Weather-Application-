@@ -11,7 +11,9 @@ app.use(express.json());
 
 // Serve Weather App files
 app.use(express.static(__dirname));
-
+app.get("/", (req, res) => {
+    res.sendFile(__dirname + "/weather.html");
+});
 
 
 // TiDB Cloud connection
