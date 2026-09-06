@@ -1,3 +1,4 @@
+
 require("dotenv").config();
 
 const express = require("express");
@@ -11,13 +12,14 @@ app.use(express.json());
 
 // Serve Weather App files
 app.use(express.static(__dirname));
+
+// Home page
 app.get("/", (req, res) => {
     res.sendFile(__dirname + "/weather.html");
 });
 
-
 // TiDB Cloud connection
-const db = mysql.createConnection({
+const db = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -25,15 +27,16 @@ const db = mysql.createConnection({
     port: 4000,
     ssl: {
         minVersion: "TLSv1.2"
-    }
+    },
+    waitForConnections: true,
+    connectionLimit: 5,
+    queueLimit: 0,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 0
 });
 
-db.on("error", (err) => {
-    console.log("Database connection error:", err);
-});
-
-// Connect MySQL
-db.connect((err) => {
+// Test database connection
+db.query("SELECT 1", (err) => {
     if (err) {
         console.log("MySQL connection failed:", err);
         return;
@@ -41,7 +44,6 @@ db.connect((err) => {
 
     console.log("MySQL connected successfully!");
 });
-
 
 // Get weather from OpenWeather
 app.get("/api/weather", async (req, res) => {
@@ -82,7 +84,6 @@ app.get("/api/weather", async (req, res) => {
     }
 });
 
-
 // Save weather history
 app.post("/api/weather-history", (req, res) => {
 
@@ -119,7 +120,6 @@ app.post("/api/weather-history", (req, res) => {
         }
     );
 });
-
 
 // Start server
 app.listen(process.env.PORT || 3000, "0.0.0.0", () => {
