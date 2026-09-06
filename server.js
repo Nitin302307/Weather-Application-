@@ -1,0 +1,118 @@
+require("dotenv").config();
+
+const express = require("express");
+const mysql = require("mysql2");
+const cors = require("cors");
+
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+// Serve Weather App files
+app.use(express.static(__dirname));
+
+
+// MySQL connection
+const db = mysql.createConnection({
+    host: "localhost",
+    user: "root",
+    password: "Nitin@2005",
+    database: "weather_db",
+    port: 3306
+});
+
+
+// Connect MySQL
+db.connect((err) => {
+    if (err) {
+        console.log("MySQL connection failed:", err);
+        return;
+    }
+
+    console.log("MySQL connected successfully!");
+});
+
+
+// Get weather from OpenWeather
+app.get("/api/weather", async (req, res) => {
+
+    const city = req.query.city;
+
+    if (!city) {
+        return res.status(400).json({
+            message: "City name is required"
+        });
+    }
+
+    const API_KEY = process.env.OPENWEATHER_API_KEY;
+
+    try {
+
+        const URL =
+            `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`;
+
+        const response = await fetch(URL);
+        const data = await response.json();
+
+        if (!response.ok) {
+            return res.status(response.status).json({
+                message: data.message || "City not found"
+            });
+        }
+
+        res.json(data);
+
+    } catch (error) {
+
+        console.log("Weather API Error:", error);
+
+        res.status(500).json({
+            message: "Weather service error"
+        });
+    }
+});
+
+
+// Save weather history
+app.post("/api/weather-history", (req, res) => {
+
+    const {
+        city,
+        temperature,
+        humidity,
+        wind_speed,
+        weather_condition
+    } = req.body;
+
+    const sql = `
+        INSERT INTO weather_history
+        (city, temperature, humidity, wind_speed, weather_condition)
+        VALUES (?, ?, ?, ?, ?)
+    `;
+
+    db.query(
+        sql,
+        [city, temperature, humidity, wind_speed, weather_condition],
+        (err, result) => {
+
+            if (err) {
+                console.log("Database error:", err);
+
+                return res.status(500).json({
+                    message: "Data save nahi hua"
+                });
+            }
+
+            res.json({
+                message: "Weather data saved successfully!"
+            });
+        }
+    );
+});
+
+
+// Start server
+app.listen(3000, () => {
+    console.log("Server running on http://localhost:3000");
+});
