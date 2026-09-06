@@ -15,11 +15,11 @@ app.use(express.static(__dirname));
 
 // MySQL connection
 const db = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "Nitin@2005",
-    database: "weather_db",
-    port: 3306
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT || 3306
 });
 
 
@@ -113,6 +113,6 @@ app.post("/api/weather-history", (req, res) => {
 
 
 // Start server
-app.listen(3000, () => {
-    console.log("Server running on http://localhost:3000");
+app.listen(process.env.PORT || 3000, "0.0.0.0", () => {
+    console.log(`Server running on port ${process.env.PORT || 3000}`);
 });
